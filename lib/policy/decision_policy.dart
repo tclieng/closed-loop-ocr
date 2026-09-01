@@ -240,12 +240,17 @@ class DecisionPolicy {
     );
   }
 
-  ReceiptDecision _red(ExtractionTrace t, String why) => ReceiptDecision(
-        receiptId: t.receiptId,
-        policyVersion: version,
-        overall: ReceiptStatus.red,
-        fields: const [],
-        rationale: why,
-        decidedAt: DateTime.now(),
-      );
+  ReceiptDecision _red(ExtractionTrace t, String why) {
+    // Always include per-field decisions, even on global RED, so downstream
+    // tools (benchmark, audit) can report per-field status uniformly.
+    final fieldDecisions = t.fields.map(decideField).toList();
+    return ReceiptDecision(
+      receiptId: t.receiptId,
+      policyVersion: version,
+      overall: ReceiptStatus.red,
+      fields: fieldDecisions,
+      rationale: why,
+      decidedAt: DateTime.now(),
+    );
+  }
 }

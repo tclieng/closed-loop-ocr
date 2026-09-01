@@ -19,13 +19,13 @@ class IntelliOCRApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'IntelliOCR',
+      title: 'Closed Loop OCR',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFFFF6B35),
-          primary: const Color(0xFFFF6B35),
-          secondary: const Color(0xFFFFB347),
+          seedColor: const Color(0xFF1ABC9C),
+          primary: const Color(0xFF1ABC9C),
+          secondary: const Color(0xFF0B1F3A),
         ),
         useMaterial3: true,
         appBarTheme: const AppBarTheme(

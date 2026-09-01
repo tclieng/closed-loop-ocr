@@ -1,0 +1,61 @@
+name: closed_loop_ocr
+description: "Closed Loop OCR - Supplier-Specific Receipt/Invoice Capture with 12-Engine Progressive Pipeline"
+publish_to: 'none'
+
+version: 0.1.0+1
+
+environment:
+  sdk: '>=3.4.3 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.6
+  
+  # Image capture
+  image_picker: ^1.1.2
+
+  # On-device OCR engine
+  google_mlkit_text_recognition: ^0.14.0
+
+  # Local image preprocessing
+  image: ^4.3.0
+
+  # Storage & File access
+  path_provider: ^2.1.4
+  path: ^1.9.0
+  
+  # HTTP
+  http: ^1.2.1
+
+  # Export
+  excel: ^4.0.6
+  share_plus: ^9.0.0
+  
+  # UI
+  intl: ^0.19.0
+  permission_handler: ^11.3.1
+  
+  # File picker
+  file_picker: ^8.0.0
+
+  # Persistence
+  shared_preferences: ^2.2.3
+
+  # Color utilities
+  vector_math: ^2.1.4
+
+  # Secondary OCR engine for cross-validation
+  flutter_tesseract_ocr: ^0.4.31
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/tessdata/
+    - assets/tessdata_config.json

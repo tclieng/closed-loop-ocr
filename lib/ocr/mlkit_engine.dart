@@ -6,6 +6,7 @@
 
 import 'dart:typed_data';
 
+import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import '../services/ocr_service.dart';
 import 'ocr_engine.dart';
 import 'ocr_types.dart';

@@ -3,6 +3,12 @@
 // Multi-OCR consensus: align each engine's line output (by reading order,
 // with optional bbox proximity as a tiebreak) and vote a canonical text per
 // line. The result feeds the DecisionPolicy through OcrExtractor.
+//
+// Selective invocation: `primary` engines always run. The (slower, heavier)
+// `detailed` engines — e.g. PaddleOCR on-device — run ONLY when the primary
+// engines disagree or one misses a line. This keeps latency/RAM low on
+// modest devices (e.g. 8 GB phones) while still lifting accuracy on hard
+// receipts.
 
 import 'dart:typed_data';
 
@@ -10,24 +16,51 @@ import 'ocr_engine.dart';
 import 'ocr_types.dart';
 
 class ConsensusOcr {
-  final List<OcrEngine> engines;
-  /// Minimum normalized-text similarity for two lines to be considered the
-  /// same logical line across engines.
+  /// Engines that always run (cheap, fast on-device).
+  final List<OcrEngine> primary;
+  /// Tie-breaker engines, run only when `primary` disagree.
+  final List<OcrEngine> detailed;
+  /// Minimum normalized-text similarity for two lines to be the same logical line.
   final double textThresh;
-  const ConsensusOcr(this.engines, {this.textThresh = 0.78});
+  const ConsensusOcr({
+    required this.primary,
+    this.detailed = const [],
+    this.textThresh = 0.78,
+  });
 
-  /// Run all available engines on one image and align their outputs.
+  /// Run primary engines; invoke detailed only if they disagree or a primary
+  /// misses a line. Returns the raw per-engine results actually produced
+  /// (for OcrExtractor.fromResults).
+  Future<List<OcrResult>> runRaw(Uint8List imageBytes) async {
+    final primaryReady = primary.where((e) => e.isAvailable).toList();
+    if (primaryReady.isEmpty) return const [];
+    final primaryResults =
+        await Future.wait(primaryReady.map((e) => e.detect(imageBytes)));
+    final primaryAligned = align(primaryResults, textThresh);
+    if (!_needsDetailed(primaryAligned, primaryReady.length)) {
+      return primaryResults;
+    }
+    final detailedReady = detailed.where((e) => e.isAvailable).toList();
+    if (detailedReady.isEmpty) return primaryResults;
+    final detailedResults =
+        await Future.wait(detailedReady.map((e) => e.detect(imageBytes)));
+    return [...primaryResults, ...detailedResults];
+  }
+
+  /// Run and align (consensus lines). Used by callers that want the merged view.
   Future<List<ConsensusLine>> run(Uint8List imageBytes) async {
     final results = await runRaw(imageBytes);
     return align(results, textThresh);
   }
 
-  /// Run all available engines; return the raw per-engine results (no
-  /// alignment). Used by OcrExtractor.extract.
-  Future<List<OcrResult>> runRaw(Uint8List imageBytes) async {
-    final ready = engines.where((e) => e.isAvailable).toList();
-    if (ready.isEmpty) return const [];
-    return Future.wait(ready.map((e) => e.detect(imageBytes)));
+  /// True when at least one line shows primary-engine disagreement or a
+  /// primary engine missing that line — i.e. a detailed engine would help.
+  static bool _needsDetailed(List<ConsensusLine> lines, int primaryCount) {
+    for (final l in lines) {
+      if (l.total < primaryCount) return true; // some primary engine missed this line
+      if (l.agreement < l.total) return true; // engines disagree on canonical text
+    }
+    return false;
   }
 
   /// Pure alignment over already-collected engine results (no image needed).

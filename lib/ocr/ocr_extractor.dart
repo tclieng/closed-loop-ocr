@@ -20,7 +20,7 @@ class OcrExtractor {
   final ConsensusOcr consensus;
   final FieldRisk defaultRisk;
 
-  OcrExtractor(this.consensus, {this.defaultRisk = FieldRisk.low});
+  OcrExtractor({required this.consensus, this.defaultRisk = FieldRisk.low});
 
   /// Build an ExtractionTrace from pre-collected engine results (no image
   /// needed). Used by the benchmark harness and unit tests.

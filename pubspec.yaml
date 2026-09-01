@@ -49,6 +49,9 @@ dependencies:
   # Secondary OCR engine for cross-validation
   flutter_tesseract_ocr: ^0.4.31
 
+  # Third on-device OCR engine: PaddleOCR (PP-OCRv4) via ONNX Runtime
+  onnxruntime: ^1.4.1
+
   # Versioned local database (12-engine schema, audit trail)
   sqflite: ^2.3.3
 

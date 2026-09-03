@@ -7,7 +7,7 @@ import 'dart:typed_data';
 import 'ocr_types.dart';
 
 abstract class OcrEngine {
-  /// Stable id used in consensus maps: 'mlkit' | 'tesseract' | 'paddle'.
+  /// Stable id used in consensus maps: 'mlkit' | 'tesseract'.
   String get id;
 
   /// Whether this engine can run in the current environment.

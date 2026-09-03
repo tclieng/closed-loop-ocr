@@ -165,18 +165,53 @@ class OcrService {
   }
 
   /// Run full page OCR with Tesseract only.
+  /// Applies contrast enhancement for faded thermal receipts.
   Future<String> recognizeFullTesseract(File imageFile) async {
     try {
+      final enhancedFile = await _enhanceForTesseract(imageFile);
       return await FlutterTesseractOcr.extractText(
-        imageFile.path,
+        enhancedFile.path,
         language: 'eng',
         args: {
-          'psm': '3', // Fully automatic page segmentation
+          'psm': '6', // Assume uniform block of text (better for receipts)
           'preserve_interword_spaces': '1',
         },
       );
     } catch (e) {
-      return '';
+      // Fallback: try original image without enhancement
+      try {
+        return await FlutterTesseractOcr.extractText(
+          imageFile.path,
+          language: 'eng',
+          args: {
+            'psm': '6',
+            'preserve_interword_spaces': '1',
+          },
+        );
+      } catch (_) {
+        return '';
+      }
+    }
+  }
+
+  /// Quick contrast enhancement for Tesseract.
+  /// Thermal receipt photos have low contrast; a fixed contrast boost
+  /// is fast (no pixel-by-pixel scan) and helps Tesseract significantly.
+  Future<File> _enhanceForTesseract(File imageFile) async {
+    try {
+      final bytes = await imageFile.readAsBytes();
+      final image = img.decodeImage(bytes);
+      if (image == null) return imageFile;
+
+      // Fixed contrast boost (2x) — fast, no histogram scan needed
+      final adjusted = img.adjustColor(image, contrast: 2.0);
+
+      final tempFile = File(
+          '${Directory.systemTemp.path}/tess_enhanced_${DateTime.now().millisecondsSinceEpoch}.jpg');
+      await tempFile.writeAsBytes(img.encodeJpg(adjusted, quality: 95));
+      return tempFile;
+    } catch (_) {
+      return imageFile;
     }
   }
 

@@ -24,6 +24,10 @@ class OcrExtractor {
 
   /// Build an ExtractionTrace from pre-collected engine results (no image
   /// needed). Used by the benchmark harness and unit tests.
+  ///
+  /// `classifyRisk`, when provided, assigns per-line risk from the canonical
+  /// line text (e.g. money/amount lines -> high). It overrides `risk`/
+  /// `defaultRisk` for every line.
   ExtractionTrace fromResults(
     List<OcrResult> results, {
     String? receiptId,
@@ -31,6 +35,11 @@ class OcrExtractor {
     double? supplierConf,
     double? quality,
     FieldRisk? risk,
+    FieldRisk Function(String canonicalText)? classifyRisk,
+    String? matchedTemplateId,
+    int? matchedTemplateVersion,
+    double? templateMatchScore,
+    bool? duplicateDetected,
   }) {
     final lines = ConsensusOcr.align(results);
     final r = risk ?? defaultRisk;
@@ -46,21 +55,22 @@ class OcrExtractor {
         final conf = agrees ? (rawConf > 0.97 ? rawConf : 0.97) : 0.5;
         ers.add(EngineFieldResult(engine, raw, conf));
       });
-      fields.add(FieldExtraction('L$i', r, ers));
+      final fieldRisk = classifyRisk != null ? classifyRisk(ln.text) : r;
+      fields.add(FieldExtraction('L$i', fieldRisk, ers));
     }
 
     return ExtractionTrace(
       receiptId: receiptId ?? 'unknown',
       supplierGuess: supplier,
       supplierConfidence: supplierConf ?? 0.8,
-      matchedTemplateId: null,
-      matchedTemplateVersion: null,
-      templateMatchScore: 0.8,
+      matchedTemplateId: matchedTemplateId,
+      matchedTemplateVersion: matchedTemplateVersion,
+      templateMatchScore: templateMatchScore ?? 0.8,
       imageQualityScore: quality ?? 0.8,
       fields: fields,
       validations: const [],
       anchors: const [],
-      duplicateDetected: false,
+      duplicateDetected: duplicateDetected ?? false,
     );
   }
 

@@ -98,9 +98,13 @@ void main() {
           ['mlkit', 'tesseract']);
     });
 
-    test('primary disagree -> detailed invoked, breaks the tie', () async {
-      // mlkit has 2 lines so it is the alignment reference; tesseract's line is
-      // clearly dissimilar (DATE vs TOTAL) so the primaries disagree -> Paddle runs.
+    test('primary disagree -> detailed invoked (whole-line engine is ref)',
+        () async {
+      // mlkit (most lines) is the reference skeleton. Its TOTAL line pairs
+      // with paddle's identical reading (agree 2/3); tesseract's DATE line is
+      // dissimilar (sim 0.33 < 0.40) so it stays a separate single-engine
+      // row -> the primaries genuinely disagree -> Paddle runs as the
+      // tie-breaker. No false agreement is manufactured.
       final ml = _MockEngine('mlkit',
           [OcrLine('TOTAL 12.00'), OcrLine('OTHER')]);
       final tess = _MockEngine('tesseract', [OcrLine('DATE 01/09/2026')]);
@@ -111,11 +115,15 @@ void main() {
           await consensus.runRaw(Uint8List.fromList([1, 2, 3]));
       expect(paddle.detectCalls, 1); // Paddle ran as tie-breaker
       expect(results.length, 3);
-      // 2/3 majority resolves the TOTAL line to the correct reading.
       final lines = ConsensusOcr.align(results);
+      // 2/3 majority resolves the TOTAL line to the correct reading.
       final total = lines.firstWhere((l) => l.text == 'TOTAL 12.00');
       expect(total.agreement, 2);
       expect(total.total, 3);
+      // The dissimilar DATE line stays a separate single-engine row.
+      final dateRow = lines.firstWhere((l) => l.text == 'DATE 01/09/2026');
+      expect(dateRow.agreement, 1);
+      expect(dateRow.perEngine.keys, contains('tesseract'));
     });
   });
 }

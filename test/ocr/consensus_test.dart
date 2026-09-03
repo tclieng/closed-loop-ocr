@@ -27,11 +27,14 @@ void main() {
     final lines = ConsensusOcr.align(results);
     expect(lines.length, 1);
     expect(lines[0].text, '100.00'); // majority
-    expect(lines[0].agreement, 3); // all engines matched this reference line
+    // True agreement: only the 2 engines reading the canonical text count.
+    // The dissenting paddle reading is preserved raw but does NOT count.
+    expect(lines[0].agreement, 2);
+    expect(lines[0].total, 3);
     expect(lines[0].perEngine['paddle'], '100.60'); // raw preserved
   });
 
-  test('align: 1 vs 2 -> majority is the pair', () {
+  test('align: 1 vs 2 -> majority is the pair; true agreement = 2', () {
     final results = [
       OcrResult('mlkit', [OcrLine('100.00', confidence: 0.85)]),
       OcrResult('tesseract', [OcrLine('200.00', confidence: 0.65)]),
@@ -40,7 +43,7 @@ void main() {
     final lines = ConsensusOcr.align(results);
     expect(lines.length, 1);
     expect(lines[0].text, '200.00');
-    expect(lines[0].agreement, 3);
+    expect(lines[0].agreement, 2); // only the 2-engine majority agrees
   });
 
   test('align: reading-order without bboxes', () {

@@ -1,10 +1,16 @@
 // lib/ocr/tesseract_engine.dart
 //
-// Tesseract engine adapter. Wraps v36 OcrService. Tesseract via the Flutter
-// plugin returns full-page text (no per-line bboxes), so lines carry no bbox
-// or per-line confidence; the consensus aligner falls back to reading-order
-// matching, and OcrExtractor boosts confidence when Tesseract's text agrees
-// with the majority.
+// Tesseract engine adapter. Wraps v36 OcrService.
+//
+// Tesseract via the Flutter plugin returns full-page text (no per-line
+// bboxes), so lines carry no bbox or per-line confidence; the consensus
+// aligner falls back to reading-order matching, and OcrExtractor boosts
+// confidence when Tesseract's text agrees with the majority.
+//
+// NOTE: Tesseract is less robust than ML Kit on faded thermal receipts.
+// It serves as a cross-validation engine: when both agree → GREEN,
+// when only one reads a line → YELLOW, when they disagree on a money
+// line → RED. This is the intended behaviour of the decision policy.
 
 import 'dart:typed_data';
 

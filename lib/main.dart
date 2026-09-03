@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'screens/home_screen.dart';
 import 'screens/capture_screen.dart';
+import 'screens/verify_screen.dart';
 import 'screens/template_list_screen.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
@@ -48,10 +49,11 @@ class IntelliOCRApp extends StatelessWidget {
           ),
         ),
       ),
-      initialRoute: '/',
+      initialRoute: '/',  // HomeScreen (has Verify button)
       routes: {
         '/': (context) => const HomeScreen(),
         '/capture': (context) => const CaptureScreen(),
+        '/verify': (context) => const VerifyScreen(),
         '/templates': (context) => const TemplateListScreen(),
       },
     );

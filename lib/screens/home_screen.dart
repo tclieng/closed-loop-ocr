@@ -11,7 +11,9 @@ import '../services/match_engine.dart';
 import '../services/image_processor.dart';
 import '../models/receipt_data.dart';
 import '../models/receipt_template.dart';
+import '../verify_runner.dart';
 import 'capture_screen.dart';
+import 'verify_screen.dart';
 import 'template_list_screen.dart';
 import 'master_templates_screen.dart';
 
@@ -43,6 +45,43 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     _refreshCaptures();
     _templateService.loadTemplates();
+    _maybeAutoverify();
+  }
+
+  /// Dev hook: if a flag file exists, run the full Closed Loop pipeline
+  /// headlessly and write a JSON verdict report.
+  /// Triggered by `adb shell touch /sdcard/Download/.clo_autoverify`
+  /// (or `<captures>/.clo_autoverify`).
+  Future<void> _maybeAutoverify() async {
+    try {
+      final capsPath = await _sdCard.getCapturesPath();
+      final basePath = await _sdCard.getBasePath();
+      print('CLO_AUTOVERIFY paths: base=$basePath caps=$capsPath');
+      // basePath = IntelliOCR/ subdir; trigger files may also be at the parent (app files/) dir
+      final parentPath = basePath.substring(0, basePath.lastIndexOf('/'));
+      final triggers = [
+        File('$capsPath/.clo_autoverify'),
+        File('$basePath/.clo_autoverify'),
+        File('$parentPath/.clo_autoverify'),
+        File('/sdcard/Download/.clo_autoverify'),
+      ];
+      bool found = false;
+      for (final t in triggers) {
+        if (await t.exists()) {
+          found = true;
+          await t.delete();
+          break;
+        }
+      }
+      if (!found) {
+        print('CLO_AUTOVERIFY: no trigger found');
+        return;
+      }
+      final path = await VerifyRunner.runAutoVerify();
+      print('CLO_AUTOVERIFY report at $path');
+    } catch (e) {
+      print('CLO_AUTOVERIFY failed: $e');
+    }
   }
 
   Future<void> _refreshCaptures() async {
@@ -844,6 +883,18 @@ class _HomeScreenState extends State<HomeScreen> {
                     fg: Colors.white,
                   ),
                 ],
+                const SizedBox(width: 4),
+                btn(
+                  icon: Icons.verified_user,
+                  label: 'Verify',
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const VerifyScreen()),
+                  ),
+                  bg: const Color(0xFF1ABC9C),
+                  fg: Colors.white,
+                ),
                 const SizedBox(width: 4),
                 btn(
                   icon: Icons.folder_copy_outlined,

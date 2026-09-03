@@ -37,6 +37,18 @@ android/build/
 *.apk
 *.aab
 
+# Local workspace scripts / test data
+# (exclude these from the repo — generated during development)
+*.py
+*.ps1
+paddle_report.json
+test_data/
+inspect_model.py
+manual_verify.ps1
+test_ppocr.ps1
+test_real_rec.py
+test_rec.py
+
 # Symbolication related
 app.*.symbols
 
